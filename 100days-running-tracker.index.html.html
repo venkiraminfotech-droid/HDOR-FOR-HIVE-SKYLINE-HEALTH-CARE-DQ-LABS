@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100 Days Running — Team Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f;--card:#13131a;--card2:#1a1a24;--border:#2a2a3a;
+    --accent:#ff4d00;--accent2:#ff8c42;--green:#00e676;
+    --yellow:#ffd600;--text:#f0f0f8;--muted:#6b6b8a;--tag:#1e1e2e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 40% at 50% 0%,rgba(255,77,0,.08) 0%,transparent 60%),radial-gradient(ellipse 40% 60% at 90% 80%,rgba(255,140,66,.05) 0%,transparent 50%);pointer-events:none;z-index:0;}
+  .container{max-width:980px;margin:0 auto;padding:0 20px;position:relative;z-index:1;}
+  header{padding:40px 0 32px;border-bottom:1px solid var(--border);margin-bottom:36px;}
+  .logo-row{display:flex;align-items:center;gap:16px;margin-bottom:8px;}
+  .flame{font-size:36px;animation:flicker 2s ease-in-out infinite;}
+  @keyframes flicker{0%,100%{filter:drop-shadow(0 0 8px #ff4d00);}50%{filter:drop-shadow(0 0 20px #ff8c42);}}
+  h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,7vw,72px);letter-spacing:2px;line-height:1;background:linear-gradient(135deg,#ff4d00,#ff8c42,#ffd600);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .subtitle{color:var(--muted);font-size:15px;font-family:'JetBrains Mono',monospace;}
+  .event-meta{display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;}
+  .meta-chip{background:var(--tag);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent2);}
+  .meta-chip span{color:var(--muted);margin-right:6px;}
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:36px;}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 18px;transition:border-color .2s;}
+  .stat-card:hover{border-color:var(--accent);}
+  .stat-val{font-family:'Bebas Neue',sans-serif;font-size:42px;line-height:1;color:var(--accent);}
+  .stat-label{font-size:12px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:1px;}
+  .tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--card);border-radius:10px;padding:4px;flex-wrap:wrap;}
+  .tab{padding:8px 14px;border-radius:7px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:transparent;color:var(--muted);transition:all .2s;}
+  .tab.active{background:var(--accent);color:white;}
+  .tab:hover:not(.active){color:var(--text);}
+  .inp{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+  .inp:focus{border-color:var(--accent);}
+  .btn{background:var(--accent);color:white;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;transition:all .15s;white-space:nowrap;}
+  .btn:hover{background:#ff6a22;transform:translateY(-1px);}
+  .btn-sm{padding:6px 12px;font-size:12px;border-radius:6px;}
+  .btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted);}
+  .btn-outline:hover{border-color:var(--accent);color:var(--accent);background:transparent;}
+  .btn-green{background:var(--green);color:#000;}
+  .btn-green:hover{background:#00ff88;}
+  .btn-wa{background:#25D366;color:white;}
+  .btn-wa:hover{background:#1db954;}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px;}
+  .panel h3{font-size:16px;font-weight:600;margin-bottom:4px;}
+  .panel-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+  /* SMART PASTE */
+  .paste-area{width:100%;min-height:130px;resize:vertical;background:var(--bg);border:2px dashed var(--border);border-radius:10px;padding:14px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;transition:border-color .2s;line-height:1.8;}
+  .paste-area:focus{border-color:var(--accent);border-style:solid;}
+  .parse-results{margin-top:14px;display:none;}
+  .parse-results.visible{display:block;}
+  .parse-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;margin-bottom:6px;background:var(--card2);border:1px solid var(--border);animation:si .2s ease;}
+  .parse-item.matched{border-color:var(--green);}
+  .parse-item.unmatched{border-color:var(--yellow);}
+  .parse-item.duplicate{border-color:var(--muted);opacity:.6;}
+  .parse-status{font-size:16px;flex-shrink:0;}
+  .parse-info{flex:1;min-width:0;}
+  .parse-name{font-weight:600;font-size:13px;}
+  .parse-url{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .parse-note{font-size:11px;margin-top:2px;}
+  .parse-note.ok{color:var(--green);}.parse-note.warn{color:var(--yellow);}.parse-note.dup{color:var(--muted);}
+  .parse-select{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px;outline:none;}
+  /* BOARD */
+  .board-header{display:grid;grid-template-columns:48px 1fr 80px 80px 80px 60px;gap:8px;padding:8px 16px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-family:'JetBrains Mono',monospace;}
+  .runner-row{display:grid;grid-template-columns:48px 1fr 80px 80px 80px 60px;gap:8px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px;transition:all .2s;cursor:pointer;animation:si .3s ease;}
+  @keyframes si{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+  .runner-row:hover{border-color:var(--accent);background:var(--card2);}
+  .rank{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--muted);text-align:center;}
+  .rank.top1{color:#ffd600;}.rank.top2{color:#c0c0c0;}.rank.top3{color:#cd7f32;}
+  .runner-info{display:flex;align-items:center;gap:10px;min-width:0;}
+  .avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
+  .runner-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .runner-sub{font-size:11px;color:var(--muted);}
+  .days-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);text-align:center;}
+  .streak-val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent2);text-align:center;}
+  .last-val{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-align:center;}
+  .prog-wrap{display:flex;align-items:center;gap:5px;justify-content:center;}
+  .prog-bar{height:4px;background:var(--border);border-radius:2px;width:36px;overflow:hidden;}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .5s;}
+  .pct{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  /* FEED */
+  .act-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:14px;animation:si .3s ease;}
+  .act-day{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent);min-width:40px;text-align:center;}
+  .act-info{flex:1;min-width:0;}
+  .act-name{font-weight:600;font-size:14px;}
+  .act-url{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .act-time{font-size:11px;color:var(--muted);white-space:nowrap;}
+  /* FILTERS */
+  .filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+  .fc{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;}
+  .fc.active{background:var(--accent);border-color:var(--accent);color:white;}
+  .sw{position:relative;}
+  .sw input{width:100%;padding-left:36px;}
+  .sw-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);}
+  /* WA */
+  .wa-box{background:#0d1f13;border:1px solid #25D36644;border-radius:12px;padding:18px;margin-top:16px;}
+  .wa-box h4{color:#25D366;font-size:14px;font-weight:600;margin-bottom:10px;}
+  .wa-prev{font-family:'JetBrains Mono',monospace;font-size:12px;color:#ccc;white-space:pre-wrap;line-height:1.7;max-height:220px;overflow-y:auto;}
+  /* MODAL */
+  .ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px);}
+  .ov.open{display:flex;}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:480px;width:90%;animation:si .25s ease;}
+  .modal h3{font-size:18px;font-weight:700;margin-bottom:16px;}
+  .modal-acts{max-height:320px;overflow-y:auto;}
+  .m-act{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+  .m-day{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--accent);min-width:36px;}
+  .m-link{color:var(--accent);font-size:12px;font-family:'JetBrains Mono',monospace;word-break:break-all;}
+  .mc{float:right;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;}
+  .empty{text-align:center;padding:48px 24px;color:var(--muted);}
+  .empty-icon{font-size:48px;margin-bottom:12px;}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:#000;border-radius:10px;padding:12px 20px;font-weight:600;font-size:14px;transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;}
+  .toast.show{transform:translateY(0);opacity:1;}
+  .day-badge{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#ff4d00,#ff8c42);border-radius:8px;padding:6px 16px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:20px;}
+  .miss-banner{background:#1a0f00;border:1px solid var(--accent);border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;display:none;}
+  .miss-banner strong{color:var(--accent2);}
+  @media(max-width:600px){
+    .board-header,.runner-row{grid-template-columns:36px 1fr 56px 56px;}
+    .board-header>*:nth-child(5),.runner-row>*:nth-child(5),
+    .board-header>*:nth-child(6),.runner-row>*:nth-child(6){display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div class="logo-row"><span class="flame">🔥</span><h1>100 DAYS RUNNING</h1></div>
+  <div class="subtitle">TEAM TRACKER — SEASON 2025</div>
+  <div class="event-meta">
+    <div class="meta-chip"><span>START</span>MAY 1, 2025</div>
+    <div class="meta-chip"><span>END</span>AUG 8, 2025</div>
+    <div class="meta-chip"><span>TODAY</span><span id="todayLabel">—</span></div>
+  </div>
+</header>
+
+<div class="day-badge">🏃 DAY <span id="dayNum">—</span> OF 100</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-val" id="sR">0</div><div class="stat-label">Runners</div></div>
+  <div class="stat-card"><div class="stat-val" style="color:var(--green)" id="sT">0</div><div class="stat-label">Ran Today ✅</div></div>
+  <div class="stat-card"><div class="stat-val" style="color:var(--accent)" id="sM">0</div><div class="stat-label">Not Yet ⏰</div></div>
+  <div class="stat-card"><div class="stat-val" style="color:var(--yellow)" id="sA">0</div><div class="stat-label">Total Logs</div></div>
+  <div class="stat-card"><div class="stat-val" style="color:var(--accent2)" id="sStr">—</div><div class="stat-label">Top Streak 🔥</div></div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('lb')">🏆 Leaderboard</button>
+  <button class="tab" onclick="switchTab('sl')">⚡ Smart Log</button>
+  <button class="tab" onclick="switchTab('wa')">📱 WhatsApp</button>
+  <button class="tab" onclick="switchTab('fd')">📋 Feed</button>
+  <button class="tab" onclick="switchTab('mg')">⚙️ Manage</button>
+</div>
+
+<!-- LEADERBOARD -->
+<div id="tab-lb">
+  <div class="miss-banner" id="missBanner">⏰ இன்னும் run log பண்ணல: <strong id="missNames"></strong></div>
+  <div class="filter-row">
+    <div class="sw" style="flex:1;min-width:160px;max-width:280px">
+      <span class="sw-icon">🔍</span>
+      <input class="inp" style="width:100%;padding-left:36px" id="srch" placeholder="Search..." oninput="renderBoard()">
+    </div>
+    <button class="fc active" onclick="setF('all',this)">All</button>
+    <button class="fc" onclick="setF('today',this)">✅ Ran</button>
+    <button class="fc" onclick="setF('miss',this)">⏰ Not Yet</button>
+  </div>
+  <div class="board-header">
+    <div>#</div><div>Runner</div>
+    <div style="text-align:center">Days</div><div style="text-align:center">Streak</div>
+    <div style="text-align:center">Last</div><div style="text-align:center">%</div>
+  </div>
+  <div id="boardList"></div>
+</div>
+
+<!-- SMART LOG -->
+<div id="tab-sl" style="display:none">
+  <div class="panel">
+    <h3>⚡ Smart Bulk Paste</h3>
+    <p class="panel-sub">WhatsApp group-ல runners போட்ட Strava links எல்லாத்தையும் copy பண்ணி இங்க paste பண்ணுங்க — runner பேர் auto-detect ஆகும்!</p>
+    <textarea class="paste-area" id="pasteArea" placeholder="எந்த format-லயும் paste பண்ணுங்க:&#10;&#10;Arun: https://www.strava.com/activities/123456789&#10;Priya ran today https://www.strava.com/activities/987654321&#10;https://www.strava.com/activities/111222333 - Karthik&#10;&#10;(link இருந்தா போதும், auto detect ஆகும்!)" oninput="parsePaste()"></textarea>
+    <div class="parse-results" id="parseRes">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;margin-top:14px">
+        <div style="font-size:13px;font-weight:600"><span id="pCount">0</span> links detected</div>
+        <button class="btn btn-green btn-sm" onclick="logAllParsed()">✓ Log All Matched</button>
+      </div>
+      <div id="parseList"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>➕ Single Runner Log</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <select class="inp" id="logR" style="min-width:190px" onchange="spUpdate()">
+        <option value="">Select Runner...</option>
+      </select>
+      <input class="inp" id="logU" style="flex:1;min-width:200px" placeholder="https://www.strava.com/activities/..." oninput="spUpdate()">
+      <button class="btn" onclick="logSingle()">✓ Log</button>
+    </div>
+    <div id="spPrev" style="display:none;margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--green);border-radius:8px;font-size:13px">
+      <span id="spN" style="color:var(--accent2);font-weight:600"></span>
+      <span style="color:var(--muted);margin:0 8px">·</span>
+      <span id="spD" style="color:var(--green);font-family:'JetBrains Mono',monospace;font-size:12px"></span>
+    </div>
+  </div>
+</div>
+
+<!-- WHATSAPP -->
+<div id="tab-wa" style="display:none">
+  <div class="panel">
+    <h3>📱 WhatsApp Daily Message Generator</h3>
+    <p class="panel-sub">இந்த message copy பண்ணி group-ல போடுங்க — runners motivate ஆவாங்க!</p>
+    <div class="filter-row">
+      <button class="fc active" onclick="setWa('summary',this)">📊 Summary</button>
+      <button class="fc" onclick="setWa('missing',this)">⏰ Missing Alert</button>
+      <button class="fc" onclick="setWa('top',this)">🏆 Top 10</button>
+      <button class="fc" onclick="setWa('instruct',this)">📋 Instructions</button>
+    </div>
+    <div class="wa-box">
+      <h4>Preview</h4>
+      <div class="wa-prev" id="waPrev">—</div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-wa" onclick="copyWa()">📋 Copy</button>
+        <button class="btn btn-wa" onclick="openWa()">💬 Open WhatsApp</button>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>⚙️ Settings</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Group Name</div>
+        <input class="inp" id="waGrp" placeholder="Team Runners 🏃" style="width:200px" oninput="genWa()">
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">WhatsApp Number</div>
+        <input class="inp" id="waNum" placeholder="91xxxxxxxxxx" style="width:200px">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEED -->
+<div id="tab-fd" style="display:none">
+  <div class="filter-row">
+    <button class="fc active" onclick="setFeed('all',this)">All</button>
+    <button class="fc" onclick="setFeed('today',this)">Today</button>
+    <button class="fc" onclick="setFeed('week',this)">This Week</button>
+  </div>
+  <div id="feedList"></div>
+</div>
+
+<!-- MANAGE -->
+<div id="tab-mg" style="display:none">
+  <div class="panel">
+    <h3>➕ Add Runner</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <input class="inp" id="nName" placeholder="Name" style="flex:1;min-width:150px">
+      <input class="inp" id="nBib" placeholder="Bib #" style="width:90px">
+      <button class="btn" onclick="addOne()">Add</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>📋 Bulk Add (one per line)</h3>
+    <textarea class="inp" id="bulkN" rows="6" style="width:100%;resize:vertical" placeholder="Arun Kumar&#10;Priya S&#10;Ravi M&#10;..."></textarea>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="bulkAdd()">Bulk Add</button>
+      <button class="btn btn-outline btn-sm" onclick="expData()">⬇ Export</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('impF').click()">⬆ Import</button>
+      <input type="file" id="impF" style="display:none" accept=".json" onchange="impData(event)">
+    </div>
+  </div>
+  <div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--muted)">ALL RUNNERS (<span id="mgCount">0</span>)</div>
+    <div id="mgList"></div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<div class="ov" id="ov" onclick="closeOv(event)">
+  <div class="modal">
+    <button class="mc" onclick="document.getElementById('ov').classList.remove('open')">✕</button>
+    <h3 id="ovTitle"></h3>
+    <div class="modal-acts" id="ovActs"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let runners=JSON.parse(localStorage.getItem('r100_r')||'[]');
+let activities=JSON.parse(localStorage.getItem('r100_a')||'[]');
+let boardF='all',feedF='all',waT='summary',parsedItems=[];
+const EVENT_START=new Date('2025-05-01');
+const COLS=['#ff4d00','#ff8c42','#ffd600','#00e676','#00bcd4','#e040fb','#f06292','#69f0ae','#40c4ff','#ffab40','#ef9a9a','#80cbc4','#b39ddb','#fff176','#80deea'];
+
+function getDayNum(){const d=Math.floor((new Date()-EVENT_START)/86400000)+1;return Math.max(1,Math.min(100,d));}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function fmtDate(s){return new Date(s).toLocaleDateString('en-IN',{day:'numeric',month:'short'});}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+function save(){localStorage.setItem('r100_r',JSON.stringify(runners));localStorage.setItem('r100_a',JSON.stringify(activities));}
+function col(id){return COLS[runners.findIndex(r=>r.id===id)%COLS.length];}
+function ini(n){return n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+function rActs(id){return activities.filter(a=>a.runnerId===id);}
+function todayAct(id){return activities.find(a=>a.runnerId===id&&a.date===todayStr());}
+function streak(id){
+  const dates=[...new Set(rActs(id).map(a=>a.date))].sort().reverse();
+  if(!dates.length)return 0;
+  let s=0;
+  for(let i=0;i<100;i++){const d=new Date();d.setDate(d.getDate()-i);if(dates.includes(d.toISOString().slice(0,10)))s++;else if(i>0)break;}
+  return s;
+}
+
+function updateHeader(){
+  document.getElementById('dayNum').textContent=getDayNum();
+  document.getElementById('todayLabel').textContent=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+}
+function updateStats(){
+  const t=todayStr();
+  const ran=[...new Set(activities.filter(a=>a.date===t).map(a=>a.runnerId))].length;
+  const miss=runners.length-ran;
+  document.getElementById('sR').textContent=runners.length;
+  document.getElementById('sT').textContent=ran;
+  document.getElementById('sM').textContent=miss;
+  document.getElementById('sA').textContent=activities.length;
+  const top=runners.reduce((mx,r)=>{const s=streak(r.id);return s>mx?s:mx;},0);
+  document.getElementById('sStr').textContent=top?top+'🔥':'—';
+  const missRunners=runners.filter(r=>!todayAct(r.id));
+  const banner=document.getElementById('missBanner');
+  if(missRunners.length>0&&missRunners.length<=10){
+    document.getElementById('missNames').textContent=missRunners.map(r=>r.name).join(', ');
+    banner.style.display='block';
+  } else banner.style.display='none';
+}
+
+function setF(f,el){boardF=f;document.querySelectorAll('#tab-lb .fc').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderBoard();}
+function renderBoard(){
+  const q=document.getElementById('srch').value.toLowerCase();
+  const t=todayStr();
+  let list=[...runners];
+  if(q)list=list.filter(r=>r.name.toLowerCase().includes(q));
+  if(boardF==='today')list=list.filter(r=>todayAct(r.id));
+  if(boardF==='miss')list=list.filter(r=>!todayAct(r.id));
+  list.sort((a,b)=>rActs(b.id).length-rActs(a.id).length);
+  const el=document.getElementById('boardList');
+  if(!list.length){el.innerHTML='<div class="empty"><div class="empty-icon">🏃</div><p>No runners found</p></div>';return;}
+  el.innerHTML=list.map((r,i)=>{
+    const days=rActs(r.id).length,str=streak(r.id),pct=Math.round(days/100*100);
+    const last=rActs(r.id).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    const ran=!!todayAct(r.id),c=col(r.id);
+    const rk=i===0?'top1':i===1?'top2':i===2?'top3':'';
+    return`<div class="runner-row" onclick="openOv('${r.id}')">
+      <div class="rank ${rk}">${i+1}</div>
+      <div class="runner-info">
+        <div class="avatar" style="background:${c}22;color:${c};border:1.5px solid ${c}55">${ini(r.name)}</div>
+        <div><div class="runner-name">${r.name} ${ran?'✅':'<span style="color:var(--muted);font-size:10px">⏰</span>'}</div>
+        <div class="runner-sub">${fmtDate(r.joinDate)}</div></div>
+      </div>
+      <div class="days-val">${days}</div>
+      <div class="streak-val">${str>0?str+'🔥':'—'}</div>
+      <div class="last-val">${last?fmtDate(last.date):'—'}</div>
+      <div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div><div class="pct">${pct}%</div></div>
+    </div>`;
+  }).join('');
+}
+
+// SMART PASTE
+function extractLinks(text){return[...text.matchAll(/https?:\/\/(?:www\.)?strava\.com\/activities\/\d+/gi)].map(m=>m[0]);}
+function guessRunner(line,url){
+  const part=line.replace(url,'').replace(/https?:\/\/\S+/gi,'').replace(/[:\-–|]/g,' ').trim();
+  if(!part)return null;
+  const low=part.toLowerCase();
+  let best=null,bestScore=0;
+  for(const r of runners){
+    const rl=r.name.toLowerCase(),fn=rl.split(' ')[0];
+    if(low.includes(rl)||rl.includes(low.split(' ')[0])){const sc=rl===low?100:low.includes(rl)?80:50;if(sc>bestScore){bestScore=sc;best=r;}}
+    if(low.includes(fn)&&fn.length>2&&40>bestScore){bestScore=40;best=r;}
+  }
+  return best;
+}
+function parsePaste(){
+  const text=document.getElementById('pasteArea').value;
+  const lines=text.split('\n');
+  const allLinks=extractLinks(text);
+  parsedItems=[];
+  const seen=new Set();
+  allLinks.forEach(url=>{
+    if(seen.has(url))return;seen.add(url);
+    const line=lines.find(l=>l.includes(url))||'';
+    const runner=guessRunner(line,url);
+    const isDup=runner?!!todayAct(runner.id):false;
+    parsedItems.push({url,line:line.trim(),runner,isDup});
+  });
+  const res=document.getElementById('parseRes');
+  document.getElementById('pCount').textContent=parsedItems.length;
+  if(!parsedItems.length){res.classList.remove('visible');return;}
+  res.classList.add('visible');
+  document.getElementById('parseList').innerHTML=parsedItems.map((item,i)=>{
+    let icon,cls,note,nc;
+    if(item.isDup){icon='🔁';cls='duplicate';note=`Already logged (${item.runner.name})`;nc='dup';}
+    else if(item.runner){icon='✅';cls='matched';note=`Matched → ${item.runner.name}`;nc='ok';}
+    else{icon='⚠️';cls='unmatched';note='Runner not found — select manually';nc='warn';}
+    const short=item.url.replace('https://www.strava.com/activities/','strava/…/');
+    const sel=!item.runner&&!item.isDup
+      ?`<select class="parse-select" onchange="upParsed(${i},this.value)"><option value="">Pick...</option>${runners.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select>`:'';
+    return`<div class="parse-item ${cls}">
+      <div class="parse-status">${icon}</div>
+      <div class="parse-info">
+        <div class="parse-name">${(item.line||short).slice(0,60)}</div>
+        <div class="parse-url">${short}</div>
+        <div class="parse-note ${nc}">${note}</div>
+      </div>${sel}
+    </div>`;
+  }).join('');
+}
+function upParsed(i,rid){parsedItems[i].runner=runners.find(r=>r.id===rid)||null;parsedItems[i].isDup=parsedItems[i].runner?!!todayAct(parsedItems[i].runner.id):false;}
+function logAllParsed(){
+  let count=0;
+  parsedItems.forEach(item=>{
+    if(item.runner&&!item.isDup){
+      activities.push({id:Date.now()+Math.random()+'',runnerId:item.runner.id,url:item.url,date:todayStr(),day:getDayNum(),ts:new Date().toISOString()});
+      item.isDup=true;count++;
+    }
+  });
+  save();updateAll();toast(`✅ ${count} activities logged!`);parsePaste();
+}
+
+// SINGLE LOG
+function populateSel(){
+  const s=document.getElementById('logR'),prev=s.value;
+  s.innerHTML='<option value="">Select Runner...</option>'+runners.map(r=>`<option value="${r.id}">${r.name}${todayAct(r.id)?' ✅':''}</option>`).join('');
+  if(prev)s.value=prev;
+}
+function spUpdate(){
+  const rid=document.getElementById('logR').value,url=document.getElementById('logU').value.trim();
+  const p=document.getElementById('spPrev');
+  if(!rid||!url){p.style.display='none';return;}
+  const r=runners.find(x=>x.id===rid);
+  document.getElementById('spN').textContent=r?r.name:'—';
+  document.getElementById('spD').textContent=`Day ${getDayNum()} · ${todayStr()}`;
+  p.style.display='block';
+}
+function logSingle(){
+  const rid=document.getElementById('logR').value,url=document.getElementById('logU').value.trim();
+  if(!rid){toast('⚠️ Runner select பண்ணுங்க');return;}
+  if(!url||!url.includes('strava.com')){toast('⚠️ Valid Strava link வேணும்');return;}
+  if(todayAct(rid)){toast('ℹ️ Already logged today!');return;}
+  activities.push({id:Date.now()+'',runnerId:rid,url,date:todayStr(),day:getDayNum(),ts:new Date().toISOString()});
+  save();updateAll();
+  document.getElementById('logU').value='';document.getElementById('logR').value='';document.getElementById('spPrev').style.display='none';
+  toast(`✅ ${runners.find(r=>r.id===rid)?.name} — Day ${getDayNum()} logged!`);
+}
+
+// WHATSAPP
+function setWa(t,el){waT=t;document.querySelectorAll('#tab-wa .fc').forEach(c=>c.classList.remove('active'));el.classList.add('active');genWa();}
+function genWa(){
+  const day=getDayNum(),grp=document.getElementById('waGrp')?.value||'Team Runners';
+  const ran=runners.filter(r=>todayAct(r.id)),miss=runners.filter(r=>!todayAct(r.id));
+  const top=[...runners].sort((a,b)=>rActs(b.id).length-rActs(a.id).length).slice(0,10);
+  let msg='';
+  if(waT==='summary'){
+    msg=`🔥 *100 Days Running — Day ${day}/100*\n📅 ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}\n\n`;
+    msg+=`✅ *Ran Today: ${ran.length}/${runners.length}*\n${ran.map(r=>`   🏃 ${r.name}`).join('\n')}\n`;
+    msg+=`\n⏰ *Not Yet: ${miss.length}*\n`;
+    if(miss.length&&miss.length<=15)msg+=miss.map(r=>`   😴 ${r.name}`).join('\n')+'\n';
+    msg+=`\n💪 Keep going! ${100-day} more days!\n#100DaysRunning #TeamRunners`;
+  } else if(waT==='missing'){
+    msg=`⏰ *Day ${day} — Reminder!*\n\nRun submit பண்ணாதவங்க:\n\n`;
+    msg+=miss.length?miss.map(r=>`🔴 ${r.name}`).join('\n'):'✅ Everyone logged! Amazing!';
+    msg+=`\n\n📌 Strava link இந்த group-ல போடுங்க!\n#100DaysRunning`;
+  } else if(waT==='top'){
+    msg=`🏆 *Top 10 — Day ${day}*\n\n`;
+    top.forEach((r,i)=>{const d=rActs(r.id).length,s=streak(r.id),medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;msg+=`${medal} *${r.name}* — ${d} days${s>1?` 🔥${s}`:''}\n`;});
+    msg+=`\n💪 #100DaysRunning`;
+  } else {
+    msg=`📋 *How to Submit Your Run*\n\n1️⃣ Strava-ல run complete பண்ணுங்க\n2️⃣ Activity link copy பண்ணுங்க\n   (strava.com/activities/xxxxx)\n3️⃣ இந்த group-ல paste பண்ணுங்க\n\n⏰ *Deadline: 11:59 PM daily*\n🔥 Streak break பண்ணாதீங்க!\n#100DaysRunning #Day${day}`;
+  }
+  document.getElementById('waPrev').textContent=msg;
+}
+function copyWa(){
+  const m=document.getElementById('waPrev').textContent;
+  navigator.clipboard.writeText(m).then(()=>toast('✅ Copied!')).catch(()=>{const t=document.createElement('textarea');t.value=m;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);toast('✅ Copied!');});
+}
+function openWa(){
+  const m=document.getElementById('waPrev').textContent,num=(document.getElementById('waNum')?.value||'').replace(/\D/g,'');
+  window.open(num?`https://wa.me/${num}?text=${encodeURIComponent(m)}`:`https://wa.me/?text=${encodeURIComponent(m)}`,'_blank');
+}
+
+// FEED
+function setFeed(f,el){feedF=f;document.querySelectorAll('#tab-fd .fc').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderFeed();}
+function renderFeed(){
+  let acts=[...activities].sort((a,b)=>b.ts.localeCompare(a.ts));
+  if(feedF==='today')acts=acts.filter(a=>a.date===todayStr());
+  if(feedF==='week'){const w=new Date();w.setDate(w.getDate()-7);acts=acts.filter(a=>new Date(a.date)>=w);}
+  const el=document.getElementById('feedList');
+  if(!acts.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><p>No activities yet</p></div>';return;}
+  el.innerHTML=acts.map(a=>{
+    const r=runners.find(x=>x.id===a.runnerId),c=r?col(r.id):'#888';
+    return`<div class="act-item"><div class="act-day">${a.day||'?'}</div>
+      <div class="act-info"><div class="act-name" style="color:${c}">${r?.name||'Unknown'}</div>
+      <div class="act-url">${a.url} <a style="color:var(--accent);font-size:11px;text-decoration:none" href="${a.url}" target="_blank">↗</a></div></div>
+      <div class="act-time">${fmtDate(a.date)}</div></div>`;
+  }).join('');
+}
+
+// MANAGE
+function addOne(){
+  const name=document.getElementById('nName').value.trim(),bib=document.getElementById('nBib').value.trim();
+  if(!name){toast('⚠️ Name enter பண்ணுங்க');return;}
+  if(runners.find(r=>r.name.toLowerCase()===name.toLowerCase())){toast('⚠️ Already exists!');return;}
+  runners.push({id:Date.now()+'',name,bib,joinDate:todayStr()});
+  document.getElementById('nName').value='';document.getElementById('nBib').value='';
+  save();updateAll();toast(`✅ ${name} added!`);
+}
+function bulkAdd(){
+  const raw=document.getElementById('bulkN').value.trim();if(!raw)return;
+  let added=0;
+  raw.split('\n').map(n=>n.trim()).filter(Boolean).forEach(name=>{
+    if(!runners.find(r=>r.name.toLowerCase()===name.toLowerCase())){runners.push({id:Date.now()+Math.random()+'',name,joinDate:todayStr()});added++;}
+  });
+  document.getElementById('bulkN').value='';save();updateAll();toast(`✅ ${added} runners added!`);
+}
+function removeR(id){if(!confirm('Remove?'))return;runners=runners.filter(r=>r.id!==id);activities=activities.filter(a=>a.runnerId!==id);save();updateAll();}
+function renderManage(){
+  document.getElementById('mgCount').textContent=runners.length;
+  const el=document.getElementById('mgList');
+  if(!runners.length){el.innerHTML='<div class="empty"><div class="empty-icon">👥</div><p>No runners yet</p></div>';return;}
+  el.innerHTML=runners.map(r=>{
+    const c=col(r.id),days=rActs(r.id).length,ran=!!todayAct(r.id);
+    return`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card);border:1px solid ${ran?'var(--green)':'var(--border)'};border-radius:10px;margin-bottom:8px">
+      <div class="avatar" style="background:${c}22;color:${c};border:1.5px solid ${c}55">${ini(r.name)}</div>
+      <div style="flex:1"><div style="font-weight:600;font-size:14px">${r.name} ${ran?'✅':'⏰'}${r.bib?` <span style="color:var(--muted);font-size:11px">#${r.bib}</span>`:''}</div>
+      <div style="font-size:12px;color:var(--muted)">${days} days · ${fmtDate(r.joinDate)}</div></div>
+      <button class="btn btn-outline btn-sm" onclick="removeR('${r.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+function expData(){const b=new Blob([JSON.stringify({runners,activities},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`100days-${todayStr()}.json`;a.click();}
+function impData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.runners)runners=d.runners;if(d.activities)activities=d.activities;save();updateAll();toast('✅ Imported!');}catch{toast('❌ Invalid file');}};rd.readAsText(f);}
+
+// MODAL
+function openOv(id){
+  const r=runners.find(x=>x.id===id);if(!r)return;
+  const acts=rActs(id).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('ovTitle').textContent=`${r.name} — ${acts.length} Days`;
+  document.getElementById('ovActs').innerHTML=acts.length
+    ?acts.map(a=>`<div class="m-act"><div class="m-day">${a.day||'?'}</div><div><div style="font-size:12px;color:var(--muted)">${fmtDate(a.date)}</div><a class="m-link" href="${a.url}" target="_blank">${a.url.replace('https://www.strava.com/activities/','strava/…/')}</a></div></div>`).join('')
+    :'<div class="empty"><p>No activities yet</p></div>';
+  document.getElementById('ov').classList.add('open');
+}
+function closeOv(e){if(e.target.id==='ov')document.getElementById('ov').classList.remove('open');}
+
+// TABS
+function switchTab(tab){
+  ['lb','sl','wa','fd','mg'].forEach(t=>document.getElementById('tab-'+t).style.display=t===tab?'block':'none');
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['lb','sl','wa','fd','mg'][i]===tab));
+  if(tab==='fd')renderFeed();if(tab==='mg')renderManage();if(tab==='wa')genWa();
+}
+
+function updateAll(){updateHeader();updateStats();renderBoard();populateSel();renderManage();}
+
+// SAMPLE DATA
+if(!runners.length){
+  ['Arun Kumar','Priya S','Ravi M','Deepa R','Karthik V','Meena T','Suresh P','Lakshmi K'].forEach(name=>runners.push({id:Date.now()+Math.random()+'',name,joinDate:'2025-05-01'}));
+  const t=todayStr(),y=new Date();y.setDate(y.getDate()-1);const yd=y.toISOString().slice(0,10);
+  runners.slice(0,5).forEach(r=>activities.push({id:Date.now()+Math.random()+'',runnerId:r.id,url:'https://www.strava.com/activities/'+Math.floor(Math.random()*9e9),date:t,day:getDayNum(),ts:new Date().toISOString()}));
+  runners.slice(0,7).forEach(r=>activities.push({id:Date.now()+Math.random()+'',runnerId:r.id,url:'https://www.strava.com/activities/'+Math.floor(Math.random()*9e9),date:yd,day:getDayNum()-1,ts:y.toISOString()}));
+  save();
+}
+updateAll();
+</script>
+</body>
+</html>
